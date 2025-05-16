@@ -122,9 +122,9 @@ Insights from the chart:
 
 #### 6. Price vs. MA30 Chart
 📈 30-Day Simple Moving Average (MA30)
-The 30-day Simple Moving Average (SMA) is a fundamental trend-following indicator in technical analysis. It reflects the average closing price of the stock over the past 30 trading days. This smoothing technique helps eliminate short-term volatility and highlights the underlying trend.
+-The 30-day Simple Moving Average (SMA) is a fundamental trend-following indicator in technical analysis. It reflects the average closing price of the stock over the past 30 trading days. This smoothing technique helps eliminate short-term volatility and highlights the underlying trend.
 In this analysis, MA30 is calculated using a rolling window method. The indicator is then visualized alongside the actual closing prices to show how the market behaves in relation to its recent average.
-Insight:
+-Insight:
 When the closing price crosses above the MA30 line, it may suggest an upward momentum. Conversely, when it drops below, it could indicate a bearish trend.
 
 ![Image](https://github.com/user-attachments/assets/e4085327-e9ea-477e-9b46-4e0ffd928f9c)
@@ -199,40 +199,28 @@ This setup allows the model to predict future stock prices based on the previous
 This visualization helps to intuitively assess the model’s performance in capturing the trend and fluctuations of the stock price over time. Close alignment between the two lines indicates good predictive accuracy, while significant deviations may point to prediction errors or unusual market volatility.
 
 ---
+
 ## IX. Defining the final dataset for testing by including last 100 coloums of the Model Training with GBTRegressor 
-We keep just the six core columns. ("Date","Open","High","Low","Close","Volume")
-yfinance pulls historical OHLC+Volume for AAPL from Jan 1, 2020 to Jan 1, 2025.
 
-then we Reads the CSV into a Spark DataFrame.
+- We keep just the six core columns. ("Date","Open","High","Low","Close","Volume")
+- yfinance pulls historical OHLC+Volume for AAPL from Jan 1, 2020 to Jan 1, 2025.
+-Then we Reads the CSV into a Spark DataFrame.
+-We create three derived features for each day 𝑡:
+  - PrevClose: yesterday’s Close (lag 1).
+  - MA5: 5-day moving average of Close.
+  - MA10: 10-day moving average of Close.
+- Dropping nulls removes the first 10 rows where these can’t be computed.
+- VectorAssembler packs all seven numeric inputs into a single features vector column.
 
-We create three derived features for each day 
-𝑡
-:
+- GBTRegressor builds 100 decision-tree boosters (maxIter=100), each up to depth 5.
+- We chain them in a Pipeline for convenience (assembler → gbt) and train on the full engineered DataFrame.
 
-  PrevClose: yesterday’s Close (lag 1).
-
-  MA5: 5-day moving average of Close.
-
-  MA10: 10-day moving average of Close.
-
-Dropping nulls removes the first 10 rows where these can’t be computed.
-
-VectorAssembler packs all seven numeric inputs into a single features vector column.
-
-GBTRegressor builds 100 decision-tree boosters (maxIter=100), each up to depth 5.
-
-We chain them in a Pipeline for convenience (assembler → gbt) and train on the full engineered DataFrame.
-
-Why GBTRegressor?
-Gradient Boosting builds an ensemble of weak learners (small trees) sequentially, each one correcting its predecessor’s errors.
-
-It often outperforms single-tree models and can naturally handle nonlinear interactions between features (e.g. how Volume and MA5 jointly influence tomorrow’s price).
-
-The hyperparameters (maxIter, maxDepth) control complexity vs. overfitting.
-
-and finally Rolls forward to predict the next 100 days using actual daily inputs,
-
-Evaluates and visualizes performance vs. real market data.
+- Why GBTRegressor?
+  - Gradient Boosting builds an ensemble of weak learners (small trees) sequentially, each one correcting its predecessor’s errors.
+  - It often outperforms single-tree models and can naturally handle nonlinear interactions between features (e.g. how Volume and MA5 jointly influence tomorrow’s price).
+  - The hyperparameters (maxIter, maxDepth) control complexity vs. overfitting.
+  - And finally Rolls forward to predict the next 100 days using actual daily inputs,
+  - Evaluates and visualizes performance vs. real market data.
 
 ---
 
